@@ -21,6 +21,8 @@ relogio = pygame.time.Clock()
 # Cores no formato (Vermelho, Verde, Azul), de 0 a 255
 VERDE = (100, 200, 100)
 AZUL = (50, 100, 255)
+LARANJA = (255, 150, 50)
+VERMELHO = (220, 50, 50)
 
 # ============================================
 # BLOCO 2 - Personagem
@@ -51,6 +53,43 @@ def desenhar_personagem(tela, personagem):
 
 
 # ============================================
+# BLOCO 3 - Obstáculos
+# ============================================
+
+def criar_obstaculo(x, y, velocidade, largura, cor):
+    """Cria um obstáculo (um dicionário) com posição, velocidade, tamanho e cor."""
+    return {"x": x, "y": y, "velocidade": velocidade, "largura": largura, "cor": cor}
+
+
+# Lista com todos os obstáculos do corredor.
+# Aluno: lento e pequeno (laranja). Carrinho de limpeza: rápido e comprido (vermelho).
+# Velocidade positiva anda para a direita; negativa anda para a esquerda.
+obstaculos = [
+    criar_obstaculo(0, 450, 2, 50, LARANJA),
+    criar_obstaculo(300, 450, 2, 50, LARANJA),
+    criar_obstaculo(100, 350, -5, 100, VERMELHO),
+    criar_obstaculo(400, 250, 3, 50, LARANJA),
+    criar_obstaculo(200, 150, -6, 100, VERMELHO),
+]
+
+
+def mover_obstaculos(obstaculos):
+    """Anda com cada obstáculo. Quem sai de um lado da tela volta pelo outro."""
+    for obstaculo in obstaculos:
+        obstaculo["x"] = obstaculo["x"] + obstaculo["velocidade"]
+        if obstaculo["x"] > LARGURA:
+            obstaculo["x"] = -obstaculo["largura"]
+        if obstaculo["x"] < -obstaculo["largura"]:
+            obstaculo["x"] = LARGURA
+
+
+def desenhar_obstaculos(tela, obstaculos):
+    """Desenha cada obstáculo como um retângulo da sua cor."""
+    for obstaculo in obstaculos:
+        pygame.draw.rect(tela, obstaculo["cor"], (obstaculo["x"], obstaculo["y"], obstaculo["largura"], CASA))
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -64,14 +103,18 @@ while rodando:
         if evento.type == pygame.KEYDOWN:
             mover_personagem(personagem, evento.key)
 
-    # 2) Desenhar
+    # 2) Atualizar: os obstáculos andam sozinhos
+    mover_obstaculos(obstaculos)
+
+    # 3) Desenhar
     tela.fill(VERDE)
+    desenhar_obstaculos(tela, obstaculos)
     desenhar_personagem(tela, personagem)
 
-    # 3) Mostrar na tela o que foi desenhado
+    # 4) Mostrar na tela o que foi desenhado
     pygame.display.update()
 
-    # 4) Esperar para rodar a 60 quadros por segundo
+    # 5) Esperar para rodar a 60 quadros por segundo
     relogio.tick(60)
 
 # Saiu do loop: desliga o pygame
