@@ -42,6 +42,11 @@ LINK DO VÍDEO
 | `notebook.ipynb` | Caderno de estudos: o código explicado bloco por bloco |
 | `musica.wav` | Música de fundo (toca em loop) |
 | `batida.wav` | Efeito de som quando o personagem bate em alguém |
+| `imagens/` | Imagens do jogo em pixel art (personagem com animações, alunos e zelador com carrinho) |
+| `ferramentas/gerar_imagens.py` | Script usado para desenhar as imagens da pasta `imagens/` (não faz parte do jogo) |
+
+## 🎨 Fonte das imagens
+Todas as imagens foram feitas especialmente para este jogo, em pixel art, pelo script `ferramentas/gerar_imagens.py` (escrito com a ajuda do Claude). Cada imagem é desenhada a partir de um "mapa" de letras, em que cada letra é a cor de um pixel. Não usamos imagens de terceiros.
 
 ## 🔊 Fonte dos sons
 Os dois sons (`musica.wav` e `batida.wav`) foram feitos especialmente para este jogo: são ondas sonoras simples geradas por um pequeno script Python, escrito com a ajuda do Claude. Não usamos nenhum som de terceiros, então não há direitos autorais de outras pessoas envolvidos.
@@ -53,6 +58,7 @@ Seguindo as regras da disciplina, declaramos o uso de IA generativa:
 |---|---|
 | `jogo.py` | 100% gerado por IA (Claude) |
 | `notebook.ipynb` | 100% gerado por IA (Claude) |
+| `ferramentas/gerar_imagens.py` e `imagens/` | 100% gerado por IA (Claude) |
 
 **Como a IA foi usada:** usamos o Claude (Claude Code, dentro do VS Code) para escrever o jogo e o caderno de estudos. O trabalho foi dividido em blocos pequenos (janela, personagem, obstáculos, colisão, pontuação, barra de aperto, cenário...), e cada bloco seguiu sempre o mesmo processo:
 

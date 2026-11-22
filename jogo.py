@@ -21,10 +21,62 @@ relogio = pygame.time.Clock()
 
 # Cores no formato (Vermelho, Verde, Azul), de 0 a 255
 VERDE = (100, 200, 100)
-AZUL = (50, 100, 255)
-LARANJA = (255, 150, 50)
 VERMELHO = (220, 50, 50)
 PRETO = (0, 0, 0)
+
+# ============================================
+# BLOCO 10 - Imagens e animações
+# (fica aqui em cima porque os blocos 2 e 3 já usam as imagens)
+# ============================================
+
+def carregar_imagem(nome):
+    """Abre uma imagem .png da pasta imagens (com fundo transparente)."""
+    return pygame.image.load("imagens/" + nome).convert_alpha()
+
+
+# Todas as imagens do jogo, num dicionário. As animações são listas de quadros.
+IMAGENS = {
+    "parado": carregar_imagem("jogador_parado.png"),
+    "andando": [carregar_imagem("jogador_andando1.png"), carregar_imagem("jogador_andando2.png")],
+    "batida": [carregar_imagem("jogador_batida1.png"), carregar_imagem("jogador_batida2.png")],
+    "alunos": [carregar_imagem("aluno1.png"), carregar_imagem("aluno2.png"), carregar_imagem("aluno3.png")],
+    "carrinho": carregar_imagem("carrinho.png"),
+}
+
+# Quantos quadros dura cada animação (60 quadros = 1 segundo)
+TEMPO_PASSO = 12
+TEMPO_BATIDA = 60
+
+
+def comecar_animacao(personagem, nome, duracao):
+    """Liga uma animação ("andando" ou "batida") por um certo número de quadros."""
+    personagem["animacao"] = nome
+    personagem["tempo"] = duracao
+
+
+def atualizar_animacao(personagem):
+    """Diminui o tempo da animação. Quando o passo acaba, o personagem fica parado."""
+    if personagem["tempo"] > 0:
+        personagem["tempo"] = personagem["tempo"] - 1
+    if personagem["animacao"] == "andando" and personagem["tempo"] == 0:
+        personagem["animacao"] = "parado"
+
+
+def terminou_batida(personagem):
+    """Devolve True quando a animação de batida já acabou."""
+    return personagem["animacao"] == "batida" and personagem["tempo"] == 0
+
+
+def imagem_do_personagem(personagem):
+    """Escolhe o quadro certo da animação atual."""
+    if personagem["animacao"] == "andando":
+        quadro = (personagem["tempo"] // 6) % 2  # troca de quadro a cada 6 quadros
+        return IMAGENS["andando"][quadro]
+    if personagem["animacao"] == "batida":
+        quadro = (personagem["tempo"] // 8) % 2  # estrelinhas trocam a cada 8 quadros
+        return IMAGENS["batida"][quadro]
+    return IMAGENS["parado"]
+
 
 # ============================================
 # BLOCO 2 - Personagem
@@ -33,12 +85,16 @@ PRETO = (0, 0, 0)
 # Tamanho de cada "casa" do chão: o personagem anda de casa em casa
 CASA = 50
 
-# O personagem é um dicionário com a posição dele
-personagem = {"x": 250, "y": 550}
+# O personagem é um dicionário com a posição e a animação atual
+personagem = {"x": 250, "y": 550, "animacao": "parado", "tempo": 0}
 
 
 def mover_personagem(personagem, tecla):
     """Anda uma casa na direção da seta apertada, sem sair da tela."""
+    if personagem["animacao"] == "batida":
+        return  # tonto depois da batida: não anda
+    x_antes = personagem["x"]
+    y_antes = personagem["y"]
     if tecla == pygame.K_UP and personagem["y"] > 0:
         personagem["y"] = personagem["y"] - CASA
     if tecla == pygame.K_DOWN and personagem["y"] < ALTURA - CASA:
@@ -47,31 +103,42 @@ def mover_personagem(personagem, tecla):
         personagem["x"] = personagem["x"] - CASA
     if tecla == pygame.K_RIGHT and personagem["x"] < LARGURA - CASA:
         personagem["x"] = personagem["x"] + CASA
+    # Se mudou de lugar, faz a animação do passo
+    if personagem["x"] != x_antes or personagem["y"] != y_antes:
+        comecar_animacao(personagem, "andando", TEMPO_PASSO)
 
 
 def desenhar_personagem(tela, personagem):
-    """Desenha o personagem como um quadrado azul."""
-    pygame.draw.rect(tela, AZUL, (personagem["x"], personagem["y"], CASA, CASA))
+    """Desenha o quadro certo da animação: com pulinho ao andar e tremendo na batida."""
+    x = personagem["x"]
+    y = personagem["y"]
+    if personagem["animacao"] == "andando":
+        y = y - min(personagem["tempo"], TEMPO_PASSO - personagem["tempo"])  # sobe e desce
+    if personagem["animacao"] == "batida":
+        x = x + random.randint(-3, 3)  # tremendo
+    tela.blit(imagem_do_personagem(personagem), (x, y))
 
 
 # ============================================
 # BLOCO 3 - Obstáculos
 # ============================================
 
-def criar_obstaculo(x, y, velocidade, largura, cor):
-    """Cria um obstáculo (um dicionário) com posição, velocidade, tamanho e cor."""
-    return {"x": x, "y": y, "velocidade": velocidade, "largura": largura, "cor": cor}
+def criar_obstaculo(x, y, velocidade, largura, imagem):
+    """Cria um obstáculo (um dicionário). Se anda para a esquerda, a imagem é espelhada."""
+    if velocidade < 0:
+        imagem = pygame.transform.flip(imagem, True, False)
+    return {"x": x, "y": y, "velocidade": velocidade, "largura": largura, "imagem": imagem}
 
 
 # Lista com todos os obstáculos do corredor.
-# Aluno: lento e pequeno (laranja). Carrinho de limpeza: rápido e comprido (vermelho).
+# Aluno: lento e pequeno (1 casa). Zelador com carrinho de limpeza: rápido e comprido (2 casas).
 # Velocidade positiva anda para a direita; negativa anda para a esquerda.
 obstaculos = [
-    criar_obstaculo(0, 450, 2, 50, LARANJA),
-    criar_obstaculo(300, 450, 2, 50, LARANJA),
-    criar_obstaculo(100, 350, -5, 100, VERMELHO),
-    criar_obstaculo(400, 250, 3, 50, LARANJA),
-    criar_obstaculo(200, 150, -6, 100, VERMELHO),
+    criar_obstaculo(0, 450, 2, 50, IMAGENS["alunos"][0]),
+    criar_obstaculo(300, 450, 2, 50, IMAGENS["alunos"][1]),
+    criar_obstaculo(100, 350, -5, 100, IMAGENS["carrinho"]),
+    criar_obstaculo(400, 250, 3, 50, IMAGENS["alunos"][2]),
+    criar_obstaculo(200, 150, -6, 100, IMAGENS["carrinho"]),
 ]
 
 
@@ -86,9 +153,9 @@ def mover_obstaculos(obstaculos):
 
 
 def desenhar_obstaculos(tela, obstaculos):
-    """Desenha cada obstáculo como um retângulo da sua cor."""
+    """Desenha a imagem de cada obstáculo na posição dele."""
     for obstaculo in obstaculos:
-        pygame.draw.rect(tela, obstaculo["cor"], (obstaculo["x"], obstaculo["y"], obstaculo["largura"], CASA))
+        tela.blit(obstaculo["imagem"], (obstaculo["x"], obstaculo["y"]))
 
 
 # ============================================
@@ -106,9 +173,11 @@ def bateu(personagem, obstaculos):
 
 
 def voltar_ao_comeco(personagem):
-    """Coloca o personagem de volta na posição inicial, lá embaixo."""
+    """Coloca o personagem de volta na posição inicial, lá embaixo, parado."""
     personagem["x"] = 250
     personagem["y"] = 550
+    personagem["animacao"] = "parado"
+    personagem["tempo"] = 0
 
 
 # ============================================
@@ -296,9 +365,16 @@ while rodando:
     if estado == "jogo":
         mover_obstaculos(obstaculos)
 
-        # Se bateu em alguém, toca a batida, volta para o começo e perde os pontos
-        if bateu(personagem, obstaculos):
+        # Se bateu em alguém, toca a batida e começa a animação de batida
+        if personagem["animacao"] != "batida" and bateu(personagem, obstaculos):
             som_batida.play()
+            comecar_animacao(personagem, "batida", TEMPO_BATIDA)
+
+        # Conta o tempo da animação
+        atualizar_animacao(personagem)
+
+        # Quando a animação de batida acaba, volta para o começo e perde os pontos
+        if terminou_batida(personagem):
             voltar_ao_comeco(personagem)
             zerar_pontos(placar)
 
