@@ -12,6 +12,9 @@ pygame.init()
 LARGURA = 600
 ALTURA = 600
 
+# Tamanho de cada "casa" do chão: tudo anda de casa em casa (a tela tem 12 x 12 casas)
+CASA = 50
+
 # Cria a janela e coloca um título nela
 tela = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Segura Aí!")
@@ -24,9 +27,14 @@ VERMELHO = (220, 50, 50)
 PRETO = (0, 0, 0)
 BRANCO = (255, 255, 255)
 
+# Fontes para escrever na tela (None = fonte padrão do pygame; o número é o tamanho)
+fonte = pygame.font.Font(None, 40)
+fonte_pequena = pygame.font.Font(None, 28)
+fonte_grande = pygame.font.Font(None, 72)
+
+
 # ============================================
-# BLOCO 10 - Imagens e animações
-# (fica aqui em cima porque os blocos 2 e 3 já usam as imagens)
+# BLOCO 2 - Imagens
 # ============================================
 
 def carregar_imagem(nome):
@@ -50,9 +58,24 @@ IMAGENS = {
     "game_over": carregar_imagem("game_over.png"),
 }
 
+# Os três mapas que ficam se repetindo, nesta ordem: corredor das salas, cantina e parquinho
+FUNDOS = [carregar_imagem("fundo1.png"), carregar_imagem("fundo2.png"), carregar_imagem("fundo3.png")]
+
+
+# ============================================
+# BLOCO 3 - Personagem e animações
+# ============================================
+
+# O personagem não sobe acima desta altura na tela: dali para cima, quem desce é o mundo (Bloco 5)
+LINHA_LIMITE = 300
+
 # Quantos quadros dura cada animação (60 quadros = 1 segundo)
 TEMPO_PASSO = 12
 TEMPO_BATIDA = 60
+
+# O personagem é um dicionário com a posição, a animação atual e a faixa onde está
+# ("faixa" = quantas faixas ele está acima da largada)
+personagem = {"x": 250, "y": 550, "animacao": "parado", "tempo": 0, "faixa": 0}
 
 
 def comecar_animacao(personagem, nome, duracao):
@@ -72,32 +95,6 @@ def atualizar_animacao(personagem):
 def terminou_batida(personagem):
     """Devolve True quando a animação de batida já acabou."""
     return personagem["animacao"] == "batida" and personagem["tempo"] == 0
-
-
-def imagem_do_personagem(personagem):
-    """Escolhe o quadro certo da animação atual."""
-    if personagem["animacao"] == "andando":
-        quadro = (personagem["tempo"] // 6) % 2  # troca de quadro a cada 6 quadros
-        return IMAGENS["andando"][quadro]
-    if personagem["animacao"] == "batida":
-        quadro = (personagem["tempo"] // 8) % 2  # estrelinhas trocam a cada 8 quadros
-        return IMAGENS["batida"][quadro]
-    return IMAGENS["parado"]
-
-
-# ============================================
-# BLOCO 2 - Personagem
-# ============================================
-
-# Tamanho de cada "casa" do chão: o personagem anda de casa em casa
-CASA = 50
-
-# O personagem não sobe acima desta altura na tela: dali para cima, quem desce é o mundo (Bloco 11)
-LINHA_LIMITE = 300
-
-# O personagem é um dicionário com a posição, a animação atual e a faixa onde está
-# ("faixa" = quantas faixas ele está acima da largada)
-personagem = {"x": 250, "y": 550, "animacao": "parado", "tempo": 0, "faixa": 0}
 
 
 def mover_personagem(personagem, tecla):
@@ -126,6 +123,17 @@ def mover_personagem(personagem, tecla):
     return precisa_rolar
 
 
+def imagem_do_personagem(personagem):
+    """Escolhe o quadro certo da animação atual."""
+    if personagem["animacao"] == "andando":
+        quadro = (personagem["tempo"] // 6) % 2  # troca de quadro a cada 6 quadros
+        return IMAGENS["andando"][quadro]
+    if personagem["animacao"] == "batida":
+        quadro = (personagem["tempo"] // 8) % 2  # estrelinhas trocam a cada 8 quadros
+        return IMAGENS["batida"][quadro]
+    return IMAGENS["parado"]
+
+
 def desenhar_personagem(tela, personagem):
     """Desenha o quadro certo da animação: com pulinho ao andar e tremendo na batida."""
     x = personagem["x"]
@@ -137,22 +145,39 @@ def desenhar_personagem(tela, personagem):
     tela.blit(imagem_do_personagem(personagem), (x, y))
 
 
+def voltar_ao_comeco(personagem):
+    """Coloca o personagem de volta na posição inicial, lá embaixo, parado."""
+    personagem["x"] = 250
+    personagem["y"] = 550
+    personagem["animacao"] = "parado"
+    personagem["tempo"] = 0
+    personagem["faixa"] = 0
+
+
 # ============================================
-# BLOCO 3 - Obstáculos
+# BLOCO 4 - Obstáculos
 # ============================================
+
+# Cada tipo de obstáculo: imagens possíveis, largura, velocidades possíveis e quantos vão por faixa
+TIPOS_OBSTACULO = {
+    "aluno":      {"imagens": IMAGENS["alunos"],         "largura": CASA,     "velocidades": [1, 2, 3], "quantos": 2},
+    "professora": {"imagens": [IMAGENS["professora"]],   "largura": CASA,     "velocidades": [1, 2],    "quantos": 2},
+    "diretor":    {"imagens": [IMAGENS["diretor"]],      "largura": CASA,     "velocidades": [1],       "quantos": 2},
+    "skate":      {"imagens": [IMAGENS["skate"]],        "largura": CASA,     "velocidades": [4, 5],    "quantos": 2},
+    "zelador":    {"imagens": [IMAGENS["carrinho"]],     "largura": 2 * CASA, "velocidades": [3, 4, 5], "quantos": 1},
+    "merendeira": {"imagens": [IMAGENS["merendeira"]],   "largura": 2 * CASA, "velocidades": [2, 3],    "quantos": 1},
+    "bicicleta":  {"imagens": [IMAGENS["bicicleta"]],    "largura": 2 * CASA, "velocidades": [5, 6],    "quantos": 1},
+}
+
+# Lista com todos os obstáculos na tela. Começa vazia: eles são sorteados faixa por faixa (Bloco 5).
+obstaculos = []
+
 
 def criar_obstaculo(x, y, velocidade, largura, imagem):
     """Cria um obstáculo (um dicionário). Se anda para a esquerda, a imagem é espelhada."""
     if velocidade < 0:
         imagem = pygame.transform.flip(imagem, True, False)
     return {"x": x, "y": y, "velocidade": velocidade, "largura": largura, "imagem": imagem}
-
-
-# Lista com todos os obstáculos do corredor.
-# Aluno: lento e pequeno (1 casa). Zelador com carrinho de limpeza: rápido e comprido (2 casas).
-# Velocidade positiva anda para a direita; negativa anda para a esquerda.
-# Começa vazia: os obstáculos são sorteados faixa por faixa (Bloco 11).
-obstaculos = []
 
 
 def mover_obstaculos(obstaculos):
@@ -172,7 +197,92 @@ def desenhar_obstaculos(tela, obstaculos):
 
 
 # ============================================
-# BLOCO 4 - Colisão
+# BLOCO 5 - Mapa infinito
+# ============================================
+
+# Cada fundo tem 12 faixas (600 / 50)
+FAIXAS_POR_FUNDO = 12
+
+# Tipo de cada faixa de cada fundo, de cima para baixo: "livre" (seguro) ou "corredor" (tem obstáculos)
+FAIXAS_FUNDO = [
+    # corredor das salas: granilite (livre) e corredor de madeira
+    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
+     "corredor", "livre", "corredor", "corredor", "livre", "livre"],
+    # cantina: piso xadrez (livre) e passagem de lajota
+    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
+     "livre", "corredor", "corredor", "corredor", "livre", "livre"],
+    # parquinho: grama (livre) e trilha de terra
+    ["livre", "corredor", "livre", "corredor", "corredor", "corredor",
+     "livre", "corredor", "corredor", "livre", "corredor", "livre"],
+]
+
+# Quem pode aparecer em cada mapa ("aluno" repetido = aparece mais vezes no sorteio)
+OBSTACULOS_DO_MAPA = [
+    ["aluno", "aluno", "professora", "diretor", "zelador"],   # corredor das salas
+    ["aluno", "aluno", "merendeira", "zelador"],              # cantina
+    ["aluno", "aluno", "skate", "bicicleta"],                 # parquinho
+]
+
+# O mundo guarda quantas faixas já desceram desde a largada
+mundo = {"linhas_roladas": 0}
+
+
+def qual_fundo(numero):
+    """Diz qual dos fundos (0, 1 ou 2) a faixa de número 'numero' do mapa usa."""
+    return (numero // FAIXAS_POR_FUNDO) % len(FUNDOS)  # 0, 1, 2, 0, 1, 2...
+
+
+def tipo_da_faixa(numero):
+    """Diz se a faixa de número 'numero' do mapa (0 = largada) é "livre" ou "corredor"."""
+    linha = FAIXAS_POR_FUNDO - 1 - numero % FAIXAS_POR_FUNDO  # a lista é de cima para baixo
+    return FAIXAS_FUNDO[qual_fundo(numero)][linha]
+
+
+def criar_obstaculos_da_faixa(obstaculos, y, numero):
+    """Se a faixa é corredor, sorteia um tipo de obstáculo do mapa, a velocidade e o sentido."""
+    if tipo_da_faixa(numero) == "livre":
+        return
+    nome = random.choice(OBSTACULOS_DO_MAPA[qual_fundo(numero)])
+    tipo = TIPOS_OBSTACULO[nome]
+    direcao = random.choice([1, -1])  # 1 = para a direita, -1 = para a esquerda
+    velocidade = random.choice(tipo["velocidades"]) * direcao
+    x = random.randint(0, 250)
+    for i in range(tipo["quantos"]):  # se forem 2, o segundo vai 300 pixels depois
+        imagem = random.choice(tipo["imagens"])
+        obstaculos.append(criar_obstaculo(x + i * 300, y, velocidade, tipo["largura"], imagem))
+
+
+def montar_mapa_inicial(obstaculos, mundo):
+    """Começo da partida: mundo na largada e obstáculos sorteados nas 12 faixas da tela."""
+    mundo["linhas_roladas"] = 0
+    obstaculos.clear()
+    for numero in range(FAIXAS_POR_FUNDO):
+        y = ALTURA - CASA - numero * CASA  # faixa 0 lá embaixo (y = 550), faixa 11 lá em cima (y = 0)
+        criar_obstaculos_da_faixa(obstaculos, y, numero)
+
+
+def rolar_mundo(obstaculos, mundo):
+    """O mundo desce uma faixa: some quem saiu por baixo e nasce uma faixa nova em cima."""
+    mundo["linhas_roladas"] = mundo["linhas_roladas"] + 1
+    for obstaculo in obstaculos:
+        obstaculo["y"] = obstaculo["y"] + CASA
+    for obstaculo in obstaculos[:]:  # [:] = cópia da lista, para poder remover itens durante o for
+        if obstaculo["y"] >= ALTURA:
+            obstaculos.remove(obstaculo)
+    numero_da_faixa_nova = mundo["linhas_roladas"] + FAIXAS_POR_FUNDO - 1
+    criar_obstaculos_da_faixa(obstaculos, 0, numero_da_faixa_nova)
+
+
+def desenhar_fundo(tela, mundo):
+    """Desenha os dois pedaços de fundo que aparecem na tela, um em cima do outro."""
+    primeiro = mundo["linhas_roladas"] // FAIXAS_POR_FUNDO
+    for numero in [primeiro, primeiro + 1]:
+        y = mundo["linhas_roladas"] * CASA - numero * ALTURA
+        tela.blit(FUNDOS[numero % len(FUNDOS)], (0, y))
+
+
+# ============================================
+# BLOCO 6 - Colisão
 # ============================================
 
 def bateu(personagem, obstaculos):
@@ -185,23 +295,9 @@ def bateu(personagem, obstaculos):
     return False
 
 
-def voltar_ao_comeco(personagem):
-    """Coloca o personagem de volta na posição inicial, lá embaixo, parado."""
-    personagem["x"] = 250
-    personagem["y"] = 550
-    personagem["animacao"] = "parado"
-    personagem["tempo"] = 0
-    personagem["faixa"] = 0
-
-
 # ============================================
-# BLOCO 5 - Pontuação
+# BLOCO 7 - Pontuação e recorde
 # ============================================
-
-# Fontes para escrever na tela (None = fonte padrão do pygame; o número é o tamanho)
-fonte = pygame.font.Font(None, 40)
-fonte_pequena = pygame.font.Font(None, 28)
-fonte_grande = pygame.font.Font(None, 72)
 
 # O placar guarda os pulos da partida (a faixa mais alta alcançada) e o recorde
 placar = {"pontos": 0, "recorde": 0}
@@ -241,7 +337,7 @@ def desenhar_pontos(tela, placar):
 
 
 # ============================================
-# BLOCO 6 - Barra de aperto
+# BLOCO 8 - Barra de aperto
 # ============================================
 
 APERTO_MAXIMO = 100
@@ -274,14 +370,7 @@ def desenhar_barra(tela, barra):
 
 
 # ============================================
-# BLOCO 7 - Cenário
-# ============================================
-
-# O cenário de retângulos foi trocado pelas imagens de fundo do Bloco 11.
-
-
-# ============================================
-# BLOCO 8 - Telas (início, jogo e fim)
+# BLOCO 9 - Telas (início, jogo e fim)
 # ============================================
 
 # Em qual tela o jogo está: "inicio", "jogo" ou "fim"
@@ -351,7 +440,7 @@ def desenhar_tela_fim(tela, placar, frase):
 
 
 # ============================================
-# BLOCO 9 - Sons
+# BLOCO 10 - Sons
 # ============================================
 
 # Música de fundo: carrega o arquivo e toca para sempre (-1 = repetir sem parar)
@@ -363,106 +452,7 @@ som_batida = pygame.mixer.Sound("batida.wav")
 
 
 # ============================================
-# BLOCO 11 - Mapa infinito
-# ============================================
-
-# Os três mapas que ficam se repetindo, nesta ordem: corredor das salas, cantina e parquinho
-FUNDOS = [carregar_imagem("fundo1.png"), carregar_imagem("fundo2.png"), carregar_imagem("fundo3.png")]
-
-# Cada fundo tem 12 faixas (600 / 50)
-FAIXAS_POR_FUNDO = 12
-
-# Tipo de cada faixa de cada fundo, de cima para baixo: "livre" (seguro) ou "corredor" (tem obstáculos)
-FAIXAS_FUNDO = [
-    # corredor das salas: granilite (livre) e corredor de madeira
-    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
-     "corredor", "livre", "corredor", "corredor", "livre", "livre"],
-    # cantina: piso xadrez (livre) e passagem de lajota
-    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
-     "livre", "corredor", "corredor", "corredor", "livre", "livre"],
-    # parquinho: grama (livre) e trilha de terra
-    ["livre", "corredor", "livre", "corredor", "corredor", "corredor",
-     "livre", "corredor", "corredor", "livre", "corredor", "livre"],
-]
-
-# Cada tipo de obstáculo: imagens possíveis, largura, velocidades possíveis e quantos vão por faixa
-TIPOS_OBSTACULO = {
-    "aluno":      {"imagens": IMAGENS["alunos"],         "largura": CASA,     "velocidades": [1, 2, 3], "quantos": 2},
-    "professora": {"imagens": [IMAGENS["professora"]],   "largura": CASA,     "velocidades": [1, 2],    "quantos": 2},
-    "diretor":    {"imagens": [IMAGENS["diretor"]],      "largura": CASA,     "velocidades": [1],       "quantos": 2},
-    "skate":      {"imagens": [IMAGENS["skate"]],        "largura": CASA,     "velocidades": [4, 5],    "quantos": 2},
-    "zelador":    {"imagens": [IMAGENS["carrinho"]],     "largura": 2 * CASA, "velocidades": [3, 4, 5], "quantos": 1},
-    "merendeira": {"imagens": [IMAGENS["merendeira"]],   "largura": 2 * CASA, "velocidades": [2, 3],    "quantos": 1},
-    "bicicleta":  {"imagens": [IMAGENS["bicicleta"]],    "largura": 2 * CASA, "velocidades": [5, 6],    "quantos": 1},
-}
-
-# Quem pode aparecer em cada mapa ("aluno" repetido = aparece mais vezes no sorteio)
-OBSTACULOS_DO_MAPA = [
-    ["aluno", "aluno", "professora", "diretor", "zelador"],   # corredor das salas
-    ["aluno", "aluno", "merendeira", "zelador"],              # cantina
-    ["aluno", "aluno", "skate", "bicicleta"],                 # parquinho
-]
-
-# O mundo guarda quantas faixas já desceram desde a largada
-mundo = {"linhas_roladas": 0}
-
-
-def qual_fundo(numero):
-    """Diz qual dos fundos (0, 1 ou 2) a faixa de número 'numero' do mapa usa."""
-    return (numero // FAIXAS_POR_FUNDO) % len(FUNDOS)  # 0, 1, 2, 0, 1, 2...
-
-
-def tipo_da_faixa(numero):
-    """Diz se a faixa de número 'numero' do mapa (0 = largada) é "livre" ou "corredor"."""
-    linha = FAIXAS_POR_FUNDO - 1 - numero % FAIXAS_POR_FUNDO  # a lista é de cima para baixo
-    return FAIXAS_FUNDO[qual_fundo(numero)][linha]
-
-
-def criar_obstaculos_da_faixa(obstaculos, y, numero):
-    """Se a faixa é corredor, sorteia um tipo de obstáculo do mapa, a velocidade e o sentido."""
-    if tipo_da_faixa(numero) == "livre":
-        return
-    nome = random.choice(OBSTACULOS_DO_MAPA[qual_fundo(numero)])
-    tipo = TIPOS_OBSTACULO[nome]
-    direcao = random.choice([1, -1])  # 1 = para a direita, -1 = para a esquerda
-    velocidade = random.choice(tipo["velocidades"]) * direcao
-    x = random.randint(0, 250)
-    for i in range(tipo["quantos"]):  # se forem 2, o segundo vai 300 pixels depois
-        imagem = random.choice(tipo["imagens"])
-        obstaculos.append(criar_obstaculo(x + i * 300, y, velocidade, tipo["largura"], imagem))
-
-
-def montar_mapa_inicial(obstaculos, mundo):
-    """Começo da partida: mundo na largada e obstáculos sorteados nas 12 faixas da tela."""
-    mundo["linhas_roladas"] = 0
-    obstaculos.clear()
-    for numero in range(FAIXAS_POR_FUNDO):
-        y = ALTURA - CASA - numero * CASA  # faixa 0 lá embaixo (y = 550), faixa 11 lá em cima (y = 0)
-        criar_obstaculos_da_faixa(obstaculos, y, numero)
-
-
-def rolar_mundo(obstaculos, mundo):
-    """O mundo desce uma faixa: some quem saiu por baixo e nasce uma faixa nova em cima."""
-    mundo["linhas_roladas"] = mundo["linhas_roladas"] + 1
-    for obstaculo in obstaculos:
-        obstaculo["y"] = obstaculo["y"] + CASA
-    for obstaculo in obstaculos[:]:  # [:] = cópia da lista, para poder remover itens durante o for
-        if obstaculo["y"] >= ALTURA:
-            obstaculos.remove(obstaculo)
-    numero_da_faixa_nova = mundo["linhas_roladas"] + FAIXAS_POR_FUNDO - 1
-    criar_obstaculos_da_faixa(obstaculos, 0, numero_da_faixa_nova)
-
-
-def desenhar_fundo(tela, mundo):
-    """Desenha os dois pedaços de fundo que aparecem na tela, um em cima do outro."""
-    primeiro = mundo["linhas_roladas"] // FAIXAS_POR_FUNDO
-    for numero in [primeiro, primeiro + 1]:
-        y = mundo["linhas_roladas"] * CASA - numero * ALTURA
-        tela.blit(FUNDOS[numero % len(FUNDOS)], (0, y))
-
-
-# ============================================
-# LOOP PRINCIPAL
+# BLOCO 11 - Loop principal
 # ============================================
 
 rodando = True
@@ -513,7 +503,7 @@ while rodando:
     if estado == "inicio":
         desenhar_tela_inicio(tela)
     else:
-        # No jogo e no fim, desenha o corredor (no fim ele fica parado, por baixo da mensagem)
+        # No jogo e no fim, desenha a escola (no fim ela fica parada, por baixo da mensagem)
         desenhar_fundo(tela, mundo)
         desenhar_obstaculos(tela, obstaculos)
         desenhar_personagem(tela, personagem)
