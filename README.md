@@ -13,7 +13,10 @@ Você está **muito apertado** e precisa chegar ao banheiro! Atravesse o corredo
 Inspirado na mecânica de jogos de "atravessar a rua": o personagem anda de casa em casa e precisa acertar o momento de cada passo.
 
 - **Objetivo:** avançar o máximo possível no corredor sem bater em ninguém e antes que a barra de aperto encha.
-- **Pontuação:** cada faixa avançada vale 1 ponto.
+- **Mapa infinito:** o corredor nunca acaba. O cenário alterna entre dois ambientes (o corredor das salas e a cantina), e os alunos e carrinhos de cada faixa são sorteados.
+- **Barra de aperto:** enche em 7 segundos. Cada faixa nova alcançada esvazia a barra, então é preciso continuar avançando.
+- **Game over:** bater em alguém ou deixar a barra encher.
+- **Pontuação:** cada faixa nova alcançada vale 1 pulo. O jogo guarda o **recorde** de pulos enquanto estiver aberto.
 
 ## 🕹️ Controles
 | Tecla | Ação |
@@ -42,7 +45,7 @@ LINK DO VÍDEO
 | `notebook.ipynb` | Caderno de estudos: o código explicado bloco por bloco |
 | `musica.wav` | Música de fundo (toca em loop) |
 | `batida.wav` | Efeito de som quando o personagem bate em alguém |
-| `imagens/` | Imagens do jogo em pixel art (personagem com animações, alunos e zelador com carrinho) |
+| `imagens/` | Imagens do jogo em pixel art (personagem com animações, alunos, zelador com carrinho e os 2 fundos) |
 | `ferramentas/gerar_imagens.py` | Script usado para desenhar as imagens da pasta `imagens/` (não faz parte do jogo) |
 
 ## 🎨 Fonte das imagens

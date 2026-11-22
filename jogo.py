@@ -20,9 +20,9 @@ pygame.display.set_caption("Segura Aí!")
 relogio = pygame.time.Clock()
 
 # Cores no formato (Vermelho, Verde, Azul), de 0 a 255
-VERDE = (100, 200, 100)
 VERMELHO = (220, 50, 50)
 PRETO = (0, 0, 0)
+BRANCO = (255, 255, 255)
 
 # ============================================
 # BLOCO 10 - Imagens e animações
@@ -85,27 +85,38 @@ def imagem_do_personagem(personagem):
 # Tamanho de cada "casa" do chão: o personagem anda de casa em casa
 CASA = 50
 
-# O personagem é um dicionário com a posição e a animação atual
-personagem = {"x": 250, "y": 550, "animacao": "parado", "tempo": 0}
+# O personagem não sobe acima desta altura na tela: dali para cima, quem desce é o mundo (Bloco 11)
+LINHA_LIMITE = 300
+
+# O personagem é um dicionário com a posição, a animação atual e a faixa onde está
+# ("faixa" = quantas faixas ele está acima da largada)
+personagem = {"x": 250, "y": 550, "animacao": "parado", "tempo": 0, "faixa": 0}
 
 
 def mover_personagem(personagem, tecla):
-    """Anda uma casa na direção da seta apertada, sem sair da tela."""
+    """Anda uma casa na direção da seta. Devolve True se o mundo precisa descer."""
     if personagem["animacao"] == "batida":
-        return  # tonto depois da batida: não anda
+        return False  # tonto depois da batida: não anda
     x_antes = personagem["x"]
-    y_antes = personagem["y"]
-    if tecla == pygame.K_UP and personagem["y"] > 0:
-        personagem["y"] = personagem["y"] - CASA
+    faixa_antes = personagem["faixa"]
+    precisa_rolar = False
+    if tecla == pygame.K_UP:
+        personagem["faixa"] = personagem["faixa"] + 1
+        if personagem["y"] > LINHA_LIMITE:
+            personagem["y"] = personagem["y"] - CASA
+        else:
+            precisa_rolar = True  # já está no limite: o mundo desce no lugar dele subir
     if tecla == pygame.K_DOWN and personagem["y"] < ALTURA - CASA:
         personagem["y"] = personagem["y"] + CASA
+        personagem["faixa"] = personagem["faixa"] - 1
     if tecla == pygame.K_LEFT and personagem["x"] > 0:
         personagem["x"] = personagem["x"] - CASA
     if tecla == pygame.K_RIGHT and personagem["x"] < LARGURA - CASA:
         personagem["x"] = personagem["x"] + CASA
-    # Se mudou de lugar, faz a animação do passo
-    if personagem["x"] != x_antes or personagem["y"] != y_antes:
+    # Se andou, faz a animação do passo
+    if personagem["x"] != x_antes or personagem["faixa"] != faixa_antes:
         comecar_animacao(personagem, "andando", TEMPO_PASSO)
+    return precisa_rolar
 
 
 def desenhar_personagem(tela, personagem):
@@ -114,7 +125,7 @@ def desenhar_personagem(tela, personagem):
     y = personagem["y"]
     if personagem["animacao"] == "andando":
         y = y - min(personagem["tempo"], TEMPO_PASSO - personagem["tempo"])  # sobe e desce
-    if personagem["animacao"] == "batida":
+    if personagem["animacao"] == "batida" and personagem["tempo"] > 0:
         x = x + random.randint(-3, 3)  # tremendo
     tela.blit(imagem_do_personagem(personagem), (x, y))
 
@@ -133,13 +144,8 @@ def criar_obstaculo(x, y, velocidade, largura, imagem):
 # Lista com todos os obstáculos do corredor.
 # Aluno: lento e pequeno (1 casa). Zelador com carrinho de limpeza: rápido e comprido (2 casas).
 # Velocidade positiva anda para a direita; negativa anda para a esquerda.
-obstaculos = [
-    criar_obstaculo(0, 450, 2, 50, IMAGENS["alunos"][0]),
-    criar_obstaculo(300, 450, 2, 50, IMAGENS["alunos"][1]),
-    criar_obstaculo(100, 350, -5, 100, IMAGENS["carrinho"]),
-    criar_obstaculo(400, 250, 3, 50, IMAGENS["alunos"][2]),
-    criar_obstaculo(200, 150, -6, 100, IMAGENS["carrinho"]),
-]
+# Começa vazia: os obstáculos são sorteados faixa por faixa (Bloco 11).
+obstaculos = []
 
 
 def mover_obstaculos(obstaculos):
@@ -178,36 +184,53 @@ def voltar_ao_comeco(personagem):
     personagem["y"] = 550
     personagem["animacao"] = "parado"
     personagem["tempo"] = 0
+    personagem["faixa"] = 0
 
 
 # ============================================
 # BLOCO 5 - Pontuação
 # ============================================
 
-# Fonte para escrever na tela (None = fonte padrão do pygame, tamanho 40)
+# Fontes para escrever na tela (None = fonte padrão do pygame; o número é o tamanho)
 fonte = pygame.font.Font(None, 40)
+fonte_pequena = pygame.font.Font(None, 28)
+fonte_grande = pygame.font.Font(None, 72)
 
-# O placar guarda os pontos e a faixa mais alta que o personagem já alcançou
-placar = {"pontos": 0, "menor_y": 550}
+# O placar guarda os pulos da partida (a faixa mais alta alcançada) e o recorde
+placar = {"pontos": 0, "recorde": 0}
 
 
 def atualizar_pontos(placar, personagem):
-    """Ganha 1 ponto cada vez que o personagem chega numa faixa nova, mais para cima."""
-    if personagem["y"] < placar["menor_y"]:
-        placar["menor_y"] = personagem["y"]
-        placar["pontos"] = placar["pontos"] + 1
+    """Se o personagem chegou numa faixa nova (mais alta que todas), ganha ponto e devolve True."""
+    if personagem["faixa"] > placar["pontos"]:
+        placar["pontos"] = personagem["faixa"]
+        return True
+    return False
 
 
 def zerar_pontos(placar):
-    """Volta o placar para o começo."""
+    """Volta os pontos para zero (o recorde continua)."""
     placar["pontos"] = 0
-    placar["menor_y"] = 550
+
+
+def guardar_recorde(placar):
+    """Se a partida passou do recorde, ela vira o novo recorde."""
+    if placar["pontos"] > placar["recorde"]:
+        placar["recorde"] = placar["pontos"]
+
+
+def desenhar_sombra(tela, y, altura, quanto):
+    """Pinta um retângulo preto transparente por cima (quanto: 0 = invisível, 255 = preto)."""
+    sombra = pygame.Surface((LARGURA, altura))
+    sombra.set_alpha(quanto)
+    tela.blit(sombra, (0, y))
 
 
 def desenhar_pontos(tela, placar):
-    """Escreve os pontos no canto de cima da tela."""
-    texto = fonte.render("Pontos: " + str(placar["pontos"]), True, PRETO)
-    tela.blit(texto, (10, 10))
+    """Escreve os pulos e o recorde numa tarja escura no alto da tela."""
+    desenhar_sombra(tela, 0, 40, 150)
+    texto = fonte_pequena.render("Pulos: " + str(placar["pontos"]) + "    Recorde: " + str(placar["recorde"]), True, BRANCO)
+    tela.blit(texto, (10, 12))
 
 
 # ============================================
@@ -215,7 +238,7 @@ def desenhar_pontos(tela, placar):
 # ============================================
 
 APERTO_MAXIMO = 100
-VELOCIDADE_APERTO = 0.1  # quanto enche por quadro: 100 / 0.1 = 1000 quadros, uns 17 segundos
+VELOCIDADE_APERTO = APERTO_MAXIMO / (7 * 60)  # enche em 7 segundos (7 x 60 quadros)
 
 # A barra também é um dicionário, igual ao personagem e ao placar
 barra = {"aperto": 0}
@@ -237,47 +260,17 @@ def esvaziar_barra(barra):
 
 
 def desenhar_barra(tela, barra):
-    """Desenha a barra no canto de cima, à direita: vermelho por dentro, contorno preto."""
+    """Desenha a barra no canto de cima, à direita: vermelho por dentro, contorno branco."""
     largura_cheia = int(barra["aperto"] * 2)  # 100 de aperto = 200 pixels
     pygame.draw.rect(tela, VERMELHO, (390, 10, largura_cheia, 20))
-    pygame.draw.rect(tela, PRETO, (390, 10, 200, 20), 2)
+    pygame.draw.rect(tela, BRANCO, (390, 10, 200, 20), 2)
 
 
 # ============================================
 # BLOCO 7 - Cenário
 # ============================================
 
-CINZA_CLARO = (200, 200, 200)
-CINZA_ESCURO = (150, 150, 150)
-AZUL_CLARO = (170, 210, 240)  # azulejo do banheiro
-MARROM = (140, 90, 40)        # porta
-BRANCO = (255, 255, 255)
-
-# Fonte menor, só para escrever "WC" na porta
-fonte_pequena = pygame.font.Font(None, 24)
-
-
-def desenhar_cenario(tela):
-    """Desenha o chão do corredor, a largada lá embaixo e o banheiro lá em cima."""
-    # Chão: 12 faixas (600 / 50), alternando cinza claro e escuro
-    for linha in range(12):
-        y = linha * CASA
-        if linha % 2 == 0:
-            cor = CINZA_CLARO
-        else:
-            cor = CINZA_ESCURO
-        pygame.draw.rect(tela, cor, (0, y, LARGURA, CASA))
-
-    # Largada: a última faixa, lá embaixo, fica verde
-    pygame.draw.rect(tela, VERDE, (0, ALTURA - CASA, LARGURA, CASA))
-
-    # Banheiro: a primeira faixa, lá em cima, com azulejo azul
-    pygame.draw.rect(tela, AZUL_CLARO, (0, 0, LARGURA, CASA))
-
-    # Porta do banheiro, no meio da faixa de cima
-    pygame.draw.rect(tela, MARROM, (250, 0, CASA, CASA))
-    texto = fonte_pequena.render("WC", True, BRANCO)
-    tela.blit(texto, (262, 17))
+# O cenário de retângulos foi trocado pelas imagens de fundo do Bloco 11.
 
 
 # ============================================
@@ -287,7 +280,7 @@ def desenhar_cenario(tela):
 # Em qual tela o jogo está: "inicio", "jogo" ou "fim"
 estado = "inicio"
 
-# Frases de game over (uma é sorteada quando a barra enche)
+# Frases de game over: uma é sorteada quando a barra enche...
 FRASES_FIM = [
     "Não deu tempo...",
     "Ih, molhou tudo!",
@@ -295,40 +288,52 @@ FRASES_FIM = [
     "Alguém chama a limpeza!",
 ]
 
+# ...e outra quando o personagem bate em alguém
+FRASES_BATIDA = [
+    "Trombou no colega!",
+    "Atropelado pelo carrinho!",
+    "Olha por onde anda!",
+    "Pressa demais dá nisso!",
+]
+
 # Frase que aparece na tela de fim
 frase_fim = ""
 
 
-def reiniciar_jogo(personagem, placar, barra):
+def reiniciar_jogo(personagem, placar, barra, obstaculos, mundo):
     """Deixa tudo pronto para uma partida nova."""
     voltar_ao_comeco(personagem)
     zerar_pontos(placar)
     esvaziar_barra(barra)
+    montar_mapa_inicial(obstaculos, mundo)
 
 
-def chegou_no_banheiro(personagem):
-    """Devolve True se o personagem chegou na faixa de cima."""
-    return personagem["y"] == 0
+def escrever_no_meio(tela, texto, fonte, y):
+    """Escreve um texto branco centralizado na horizontal, na altura y."""
+    imagem = fonte.render(texto, True, BRANCO)
+    x = (LARGURA - imagem.get_width()) // 2
+    tela.blit(imagem, (x, y))
 
 
 def desenhar_tela_inicio(tela):
-    """Mostra o nome do jogo e como começar."""
-    tela.fill(AZUL_CLARO)
-    titulo = fonte.render("Segura Aí!", True, PRETO)
-    instrucao = fonte_pequena.render("Aperte ESPAÇO para começar", True, PRETO)
-    tela.blit(titulo, (220, 250))
-    tela.blit(instrucao, (180, 320))
+    """Mostra o fundo escurecido, o nome do jogo, o personagem grande e como começar."""
+    tela.blit(FUNDOS[0], (0, 0))
+    desenhar_sombra(tela, 0, ALTURA, 160)
+    escrever_no_meio(tela, "Segura Aí!", fonte_grande, 100)
+    personagem_grande = pygame.transform.scale(IMAGENS["parado"], (150, 150))
+    tela.blit(personagem_grande, (225, 190))
+    escrever_no_meio(tela, "Atravesse o corredor sem trombar em ninguém.", fonte_pequena, 380)
+    escrever_no_meio(tela, "Cada faixa nova esvazia a barra de aperto!", fonte_pequena, 410)
+    escrever_no_meio(tela, "Aperte ESPAÇO para começar", fonte, 480)
 
 
 def desenhar_tela_fim(tela, placar, frase):
-    """Mostra a frase do fim, os pontos e como jogar de novo."""
-    tela.fill(AZUL_CLARO)
-    texto_frase = fonte.render(frase, True, PRETO)
-    texto_pontos = fonte.render("Pontos: " + str(placar["pontos"]), True, PRETO)
-    instrucao = fonte_pequena.render("Aperte ESPAÇO para jogar de novo", True, PRETO)
-    tela.blit(texto_frase, (100, 200))
-    tela.blit(texto_pontos, (100, 260))
-    tela.blit(instrucao, (100, 340))
+    """Escurece o jogo parado e mostra a frase, os pulos, o recorde e como jogar de novo."""
+    desenhar_sombra(tela, 0, ALTURA, 170)
+    escrever_no_meio(tela, frase, fonte, 190)
+    escrever_no_meio(tela, "Pulos: " + str(placar["pontos"]), fonte_grande, 250)
+    escrever_no_meio(tela, "Recorde: " + str(placar["recorde"]), fonte, 330)
+    escrever_no_meio(tela, "Aperte ESPAÇO para jogar de novo", fonte_pequena, 420)
 
 
 # ============================================
@@ -344,6 +349,80 @@ som_batida = pygame.mixer.Sound("batida.wav")
 
 
 # ============================================
+# BLOCO 11 - Mapa infinito
+# ============================================
+
+# Os dois fundos que ficam se repetindo: corredor das salas e cantina
+FUNDOS = [carregar_imagem("fundo1.png"), carregar_imagem("fundo2.png")]
+
+# Cada fundo tem 12 faixas (600 / 50)
+FAIXAS_POR_FUNDO = 12
+
+# Tipo de cada faixa de cada fundo, de cima para baixo: "livre" (seguro) ou "corredor" (tem obstáculos)
+FAIXAS_FUNDO = [
+    ["livre", "corredor", "corredor", "corredor", "livre", "corredor",
+     "corredor", "livre", "corredor", "corredor", "livre", "livre"],
+    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
+     "corredor", "livre", "livre", "corredor", "corredor", "livre"],
+]
+
+# O mundo guarda quantas faixas já desceram desde a largada
+mundo = {"linhas_roladas": 0}
+
+
+def tipo_da_faixa(numero):
+    """Diz se a faixa de número 'numero' do mapa (0 = largada) é "livre" ou "corredor"."""
+    fundo = (numero // FAIXAS_POR_FUNDO) % 2                    # 0, 1, 0, 1...: fundo 1 e 2 alternando
+    linha = FAIXAS_POR_FUNDO - 1 - numero % FAIXAS_POR_FUNDO    # a lista é de cima para baixo
+    return FAIXAS_FUNDO[fundo][linha]
+
+
+def criar_obstaculos_da_faixa(obstaculos, y, numero):
+    """Se a faixa é corredor, sorteia 2 alunos lentos ou 1 carrinho rápido, e o sentido."""
+    if tipo_da_faixa(numero) == "livre":
+        return
+    direcao = random.choice([1, -1])  # 1 = para a direita, -1 = para a esquerda
+    if random.choice(["alunos", "carrinho"]) == "alunos":
+        velocidade = random.choice([1, 2, 3]) * direcao
+        x = random.randint(0, 250)
+        obstaculos.append(criar_obstaculo(x, y, velocidade, CASA, random.choice(IMAGENS["alunos"])))
+        obstaculos.append(criar_obstaculo(x + 300, y, velocidade, CASA, random.choice(IMAGENS["alunos"])))
+    else:
+        velocidade = random.choice([4, 5, 6]) * direcao
+        x = random.randint(0, 500)
+        obstaculos.append(criar_obstaculo(x, y, velocidade, 2 * CASA, IMAGENS["carrinho"]))
+
+
+def montar_mapa_inicial(obstaculos, mundo):
+    """Começo da partida: mundo na largada e obstáculos sorteados nas 12 faixas da tela."""
+    mundo["linhas_roladas"] = 0
+    obstaculos.clear()
+    for numero in range(FAIXAS_POR_FUNDO):
+        y = ALTURA - CASA - numero * CASA  # faixa 0 lá embaixo (y = 550), faixa 11 lá em cima (y = 0)
+        criar_obstaculos_da_faixa(obstaculos, y, numero)
+
+
+def rolar_mundo(obstaculos, mundo):
+    """O mundo desce uma faixa: some quem saiu por baixo e nasce uma faixa nova em cima."""
+    mundo["linhas_roladas"] = mundo["linhas_roladas"] + 1
+    for obstaculo in obstaculos:
+        obstaculo["y"] = obstaculo["y"] + CASA
+    for obstaculo in obstaculos[:]:  # [:] = cópia da lista, para poder remover itens durante o for
+        if obstaculo["y"] >= ALTURA:
+            obstaculos.remove(obstaculo)
+    numero_da_faixa_nova = mundo["linhas_roladas"] + FAIXAS_POR_FUNDO - 1
+    criar_obstaculos_da_faixa(obstaculos, 0, numero_da_faixa_nova)
+
+
+def desenhar_fundo(tela, mundo):
+    """Desenha os dois pedaços de fundo que aparecem na tela, um em cima do outro."""
+    primeiro = mundo["linhas_roladas"] // FAIXAS_POR_FUNDO
+    for numero in [primeiro, primeiro + 1]:
+        y = mundo["linhas_roladas"] * CASA - numero * ALTURA
+        tela.blit(FUNDOS[numero % 2], (0, y))
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -356,9 +435,10 @@ while rodando:
             rodando = False
         if evento.type == pygame.KEYDOWN:
             if estado == "jogo":
-                mover_personagem(personagem, evento.key)
+                if mover_personagem(personagem, evento.key):
+                    rolar_mundo(obstaculos, mundo)
             elif evento.key == pygame.K_SPACE:
-                reiniciar_jogo(personagem, placar, barra)
+                reiniciar_jogo(personagem, placar, barra, obstaculos, mundo)
                 estado = "jogo"
 
     # 2) Atualizar: só quando está jogando
@@ -373,36 +453,35 @@ while rodando:
         # Conta o tempo da animação
         atualizar_animacao(personagem)
 
-        # Quando a animação de batida acaba, volta para o começo e perde os pontos
+        # Quando a animação de batida acaba: game over
         if terminou_batida(personagem):
-            voltar_ao_comeco(personagem)
-            zerar_pontos(placar)
+            guardar_recorde(placar)
+            estado = "fim"
+            frase_fim = random.choice(FRASES_BATIDA)
 
-        # Chegou numa faixa nova? Ganha ponto
-        atualizar_pontos(placar, personagem)
+        # Chegou numa faixa nova? Ganha ponto e a barra de aperto esvazia
+        if atualizar_pontos(placar, personagem):
+            esvaziar_barra(barra)
 
         # A barra enche com o tempo. Se encher, game over com frase sorteada
         encher_barra(barra)
         if barra_cheia(barra):
+            guardar_recorde(placar)
             estado = "fim"
             frase_fim = random.choice(FRASES_FIM)
-
-        # Chegou ao banheiro: venceu!
-        if chegou_no_banheiro(personagem):
-            estado = "fim"
-            frase_fim = "Ufa! Chegou a tempo!"
 
     # 3) Desenhar a tela certa
     if estado == "inicio":
         desenhar_tela_inicio(tela)
-    elif estado == "jogo":
-        desenhar_cenario(tela)
+    else:
+        # No jogo e no fim, desenha o corredor (no fim ele fica parado, por baixo da mensagem)
+        desenhar_fundo(tela, mundo)
         desenhar_obstaculos(tela, obstaculos)
         desenhar_personagem(tela, personagem)
         desenhar_pontos(tela, placar)
         desenhar_barra(tela, barra)
-    else:
-        desenhar_tela_fim(tela, placar, frase_fim)
+        if estado == "fim":
+            desenhar_tela_fim(tela, placar, frase_fim)
 
     # 4) Mostrar na tela o que foi desenhado
     pygame.display.update()
