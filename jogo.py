@@ -90,6 +90,26 @@ def desenhar_obstaculos(tela, obstaculos):
 
 
 # ============================================
+# BLOCO 4 - Colisão
+# ============================================
+
+def bateu(personagem, obstaculos):
+    """Devolve True se o personagem está encostando em algum obstáculo."""
+    retangulo_personagem = pygame.Rect(personagem["x"], personagem["y"], CASA, CASA)
+    for obstaculo in obstaculos:
+        retangulo_obstaculo = pygame.Rect(obstaculo["x"], obstaculo["y"], obstaculo["largura"], CASA)
+        if retangulo_personagem.colliderect(retangulo_obstaculo):
+            return True
+    return False
+
+
+def voltar_ao_comeco(personagem):
+    """Coloca o personagem de volta na posição inicial, lá embaixo."""
+    personagem["x"] = 250
+    personagem["y"] = 550
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -105,6 +125,10 @@ while rodando:
 
     # 2) Atualizar: os obstáculos andam sozinhos
     mover_obstaculos(obstaculos)
+
+    # Se bateu em alguém, volta para o começo
+    if bateu(personagem, obstaculos):
+        voltar_ao_comeco(personagem)
 
     # 3) Desenhar
     tela.fill(VERDE)
