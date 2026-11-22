@@ -23,6 +23,7 @@ VERDE = (100, 200, 100)
 AZUL = (50, 100, 255)
 LARANJA = (255, 150, 50)
 VERMELHO = (220, 50, 50)
+PRETO = (0, 0, 0)
 
 # ============================================
 # BLOCO 2 - Personagem
@@ -110,6 +111,36 @@ def voltar_ao_comeco(personagem):
 
 
 # ============================================
+# BLOCO 5 - Pontuação
+# ============================================
+
+# Fonte para escrever na tela (None = fonte padrão do pygame, tamanho 40)
+fonte = pygame.font.Font(None, 40)
+
+# O placar guarda os pontos e a faixa mais alta que o personagem já alcançou
+placar = {"pontos": 0, "menor_y": 550}
+
+
+def atualizar_pontos(placar, personagem):
+    """Ganha 1 ponto cada vez que o personagem chega numa faixa nova, mais para cima."""
+    if personagem["y"] < placar["menor_y"]:
+        placar["menor_y"] = personagem["y"]
+        placar["pontos"] = placar["pontos"] + 1
+
+
+def zerar_pontos(placar):
+    """Volta o placar para o começo."""
+    placar["pontos"] = 0
+    placar["menor_y"] = 550
+
+
+def desenhar_pontos(tela, placar):
+    """Escreve os pontos no canto de cima da tela."""
+    texto = fonte.render("Pontos: " + str(placar["pontos"]), True, PRETO)
+    tela.blit(texto, (10, 10))
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -126,14 +157,19 @@ while rodando:
     # 2) Atualizar: os obstáculos andam sozinhos
     mover_obstaculos(obstaculos)
 
-    # Se bateu em alguém, volta para o começo
+    # Se bateu em alguém, volta para o começo e perde os pontos
     if bateu(personagem, obstaculos):
         voltar_ao_comeco(personagem)
+        zerar_pontos(placar)
+
+    # Chegou numa faixa nova? Ganha ponto
+    atualizar_pontos(placar, personagem)
 
     # 3) Desenhar
     tela.fill(VERDE)
     desenhar_obstaculos(tela, obstaculos)
     desenhar_personagem(tela, personagem)
+    desenhar_pontos(tela, placar)
 
     # 4) Mostrar na tela o que foi desenhado
     pygame.display.update()
