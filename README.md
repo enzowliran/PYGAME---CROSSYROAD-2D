@@ -40,6 +40,11 @@ LINK DO VÍDEO
 |---|---|
 | `jogo.py` | Código do jogo |
 | `notebook.ipynb` | Caderno de estudos: o código explicado bloco por bloco |
+| `musica.wav` | Música de fundo (toca em loop) |
+| `batida.wav` | Efeito de som quando o personagem bate em alguém |
+
+## 🔊 Fonte dos sons
+Os dois sons (`musica.wav` e `batida.wav`) foram feitos especialmente para este jogo: são ondas sonoras simples geradas por um pequeno script Python, escrito com a ajuda do Claude. Não usamos nenhum som de terceiros, então não há direitos autorais de outras pessoas envolvidos.
 
 ## 🤖 Uso de Inteligência Artificial
 Seguindo as regras da disciplina, declaramos o uso de IA generativa:

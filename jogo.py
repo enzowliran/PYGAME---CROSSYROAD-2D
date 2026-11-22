@@ -263,6 +263,18 @@ def desenhar_tela_fim(tela, placar, frase):
 
 
 # ============================================
+# BLOCO 9 - Sons
+# ============================================
+
+# Música de fundo: carrega o arquivo e toca para sempre (-1 = repetir sem parar)
+pygame.mixer.music.load("musica.wav")
+pygame.mixer.music.play(-1)
+
+# Efeito de batida: fica guardado numa variável para tocar quando precisar
+som_batida = pygame.mixer.Sound("batida.wav")
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -284,8 +296,9 @@ while rodando:
     if estado == "jogo":
         mover_obstaculos(obstaculos)
 
-        # Se bateu em alguém, volta para o começo e perde os pontos
+        # Se bateu em alguém, toca a batida, volta para o começo e perde os pontos
         if bateu(personagem, obstaculos):
+            som_batida.play()
             voltar_ao_comeco(personagem)
             zerar_pontos(placar)
 
