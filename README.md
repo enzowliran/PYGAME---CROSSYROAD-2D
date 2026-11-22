@@ -63,6 +63,7 @@ Seguindo as regras da disciplina, declaramos o uso de IA generativa:
 | `jogo.py` | 100% gerado por IA (Claude) |
 | `notebook.ipynb` | 100% gerado por IA (Claude) |
 | `ferramentas/gerar_imagens.py` e `imagens/` | 100% gerado por IA (Claude) |
+| `musica.wav` e `batida.wav` | 100% gerados por um script feito por IA (Claude) |
 
 **Como a IA foi usada:** usamos o Claude (Claude Code, dentro do VS Code) para escrever o jogo e o caderno de estudos. O trabalho foi dividido em blocos pequenos (janela, personagem, obstáculos, colisão, pontuação, barra de aperto, cenário...), e cada bloco seguiu sempre o mesmo processo:
 
