@@ -174,6 +174,43 @@ def desenhar_barra(tela, barra):
 
 
 # ============================================
+# BLOCO 7 - Cenário
+# ============================================
+
+CINZA_CLARO = (200, 200, 200)
+CINZA_ESCURO = (150, 150, 150)
+AZUL_CLARO = (170, 210, 240)  # azulejo do banheiro
+MARROM = (140, 90, 40)        # porta
+BRANCO = (255, 255, 255)
+
+# Fonte menor, só para escrever "WC" na porta
+fonte_pequena = pygame.font.Font(None, 24)
+
+
+def desenhar_cenario(tela):
+    """Desenha o chão do corredor, a largada lá embaixo e o banheiro lá em cima."""
+    # Chão: 12 faixas (600 / 50), alternando cinza claro e escuro
+    for linha in range(12):
+        y = linha * CASA
+        if linha % 2 == 0:
+            cor = CINZA_CLARO
+        else:
+            cor = CINZA_ESCURO
+        pygame.draw.rect(tela, cor, (0, y, LARGURA, CASA))
+
+    # Largada: a última faixa, lá embaixo, fica verde
+    pygame.draw.rect(tela, VERDE, (0, ALTURA - CASA, LARGURA, CASA))
+
+    # Banheiro: a primeira faixa, lá em cima, com azulejo azul
+    pygame.draw.rect(tela, AZUL_CLARO, (0, 0, LARGURA, CASA))
+
+    # Porta do banheiro, no meio da faixa de cima
+    pygame.draw.rect(tela, MARROM, (250, 0, CASA, CASA))
+    texto = fonte_pequena.render("WC", True, BRANCO)
+    tela.blit(texto, (262, 17))
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -206,7 +243,7 @@ while rodando:
         esvaziar_barra(barra)
 
     # 3) Desenhar
-    tela.fill(VERDE)
+    desenhar_cenario(tela)
     desenhar_obstaculos(tela, obstaculos)
     desenhar_personagem(tela, personagem)
     desenhar_pontos(tela, placar)
