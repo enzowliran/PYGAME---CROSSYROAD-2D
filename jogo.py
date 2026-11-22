@@ -141,6 +141,39 @@ def desenhar_pontos(tela, placar):
 
 
 # ============================================
+# BLOCO 6 - Barra de aperto
+# ============================================
+
+APERTO_MAXIMO = 100
+VELOCIDADE_APERTO = 0.1  # quanto enche por quadro: 100 / 0.1 = 1000 quadros, uns 17 segundos
+
+# A barra também é um dicionário, igual ao personagem e ao placar
+barra = {"aperto": 0}
+
+
+def encher_barra(barra):
+    """Enche um pouquinho a barra (chamada todo quadro)."""
+    barra["aperto"] = barra["aperto"] + VELOCIDADE_APERTO
+
+
+def barra_cheia(barra):
+    """Devolve True se a barra chegou no máximo."""
+    return barra["aperto"] >= APERTO_MAXIMO
+
+
+def esvaziar_barra(barra):
+    """Volta a barra para zero."""
+    barra["aperto"] = 0
+
+
+def desenhar_barra(tela, barra):
+    """Desenha a barra no canto de cima, à direita: vermelho por dentro, contorno preto."""
+    largura_cheia = int(barra["aperto"] * 2)  # 100 de aperto = 200 pixels
+    pygame.draw.rect(tela, VERMELHO, (390, 10, largura_cheia, 20))
+    pygame.draw.rect(tela, PRETO, (390, 10, 200, 20), 2)
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -165,11 +198,19 @@ while rodando:
     # Chegou numa faixa nova? Ganha ponto
     atualizar_pontos(placar, personagem)
 
+    # A barra de aperto enche com o tempo. Se encher, recomeça tudo
+    encher_barra(barra)
+    if barra_cheia(barra):
+        voltar_ao_comeco(personagem)
+        zerar_pontos(placar)
+        esvaziar_barra(barra)
+
     # 3) Desenhar
     tela.fill(VERDE)
     desenhar_obstaculos(tela, obstaculos)
     desenhar_personagem(tela, personagem)
     desenhar_pontos(tela, placar)
+    desenhar_barra(tela, barra)
 
     # 4) Mostrar na tela o que foi desenhado
     pygame.display.update()
