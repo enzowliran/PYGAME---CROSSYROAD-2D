@@ -3,6 +3,7 @@
 # ============================================
 
 import pygame
+import random
 
 # Liga o pygame (sempre a primeira coisa)
 pygame.init()
@@ -211,6 +212,57 @@ def desenhar_cenario(tela):
 
 
 # ============================================
+# BLOCO 8 - Telas (início, jogo e fim)
+# ============================================
+
+# Em qual tela o jogo está: "inicio", "jogo" ou "fim"
+estado = "inicio"
+
+# Frases de game over (uma é sorteada quando a barra enche)
+FRASES_FIM = [
+    "Não deu tempo...",
+    "Ih, molhou tudo!",
+    "Faltou só um pouquinho!",
+    "Alguém chama a limpeza!",
+]
+
+# Frase que aparece na tela de fim
+frase_fim = ""
+
+
+def reiniciar_jogo(personagem, placar, barra):
+    """Deixa tudo pronto para uma partida nova."""
+    voltar_ao_comeco(personagem)
+    zerar_pontos(placar)
+    esvaziar_barra(barra)
+
+
+def chegou_no_banheiro(personagem):
+    """Devolve True se o personagem chegou na faixa de cima."""
+    return personagem["y"] == 0
+
+
+def desenhar_tela_inicio(tela):
+    """Mostra o nome do jogo e como começar."""
+    tela.fill(AZUL_CLARO)
+    titulo = fonte.render("Segura Aí!", True, PRETO)
+    instrucao = fonte_pequena.render("Aperte ESPAÇO para começar", True, PRETO)
+    tela.blit(titulo, (220, 250))
+    tela.blit(instrucao, (180, 320))
+
+
+def desenhar_tela_fim(tela, placar, frase):
+    """Mostra a frase do fim, os pontos e como jogar de novo."""
+    tela.fill(AZUL_CLARO)
+    texto_frase = fonte.render(frase, True, PRETO)
+    texto_pontos = fonte.render("Pontos: " + str(placar["pontos"]), True, PRETO)
+    instrucao = fonte_pequena.render("Aperte ESPAÇO para jogar de novo", True, PRETO)
+    tela.blit(texto_frase, (100, 200))
+    tela.blit(texto_pontos, (100, 260))
+    tela.blit(instrucao, (100, 340))
+
+
+# ============================================
 # LOOP PRINCIPAL
 # ============================================
 
@@ -222,32 +274,46 @@ while rodando:
         if evento.type == pygame.QUIT:
             rodando = False
         if evento.type == pygame.KEYDOWN:
-            mover_personagem(personagem, evento.key)
+            if estado == "jogo":
+                mover_personagem(personagem, evento.key)
+            elif evento.key == pygame.K_SPACE:
+                reiniciar_jogo(personagem, placar, barra)
+                estado = "jogo"
 
-    # 2) Atualizar: os obstáculos andam sozinhos
-    mover_obstaculos(obstaculos)
+    # 2) Atualizar: só quando está jogando
+    if estado == "jogo":
+        mover_obstaculos(obstaculos)
 
-    # Se bateu em alguém, volta para o começo e perde os pontos
-    if bateu(personagem, obstaculos):
-        voltar_ao_comeco(personagem)
-        zerar_pontos(placar)
+        # Se bateu em alguém, volta para o começo e perde os pontos
+        if bateu(personagem, obstaculos):
+            voltar_ao_comeco(personagem)
+            zerar_pontos(placar)
 
-    # Chegou numa faixa nova? Ganha ponto
-    atualizar_pontos(placar, personagem)
+        # Chegou numa faixa nova? Ganha ponto
+        atualizar_pontos(placar, personagem)
 
-    # A barra de aperto enche com o tempo. Se encher, recomeça tudo
-    encher_barra(barra)
-    if barra_cheia(barra):
-        voltar_ao_comeco(personagem)
-        zerar_pontos(placar)
-        esvaziar_barra(barra)
+        # A barra enche com o tempo. Se encher, game over com frase sorteada
+        encher_barra(barra)
+        if barra_cheia(barra):
+            estado = "fim"
+            frase_fim = random.choice(FRASES_FIM)
 
-    # 3) Desenhar
-    desenhar_cenario(tela)
-    desenhar_obstaculos(tela, obstaculos)
-    desenhar_personagem(tela, personagem)
-    desenhar_pontos(tela, placar)
-    desenhar_barra(tela, barra)
+        # Chegou ao banheiro: venceu!
+        if chegou_no_banheiro(personagem):
+            estado = "fim"
+            frase_fim = "Ufa! Chegou a tempo!"
+
+    # 3) Desenhar a tela certa
+    if estado == "inicio":
+        desenhar_tela_inicio(tela)
+    elif estado == "jogo":
+        desenhar_cenario(tela)
+        desenhar_obstaculos(tela, obstaculos)
+        desenhar_personagem(tela, personagem)
+        desenhar_pontos(tela, placar)
+        desenhar_barra(tela, barra)
+    else:
+        desenhar_tela_fim(tela, placar, frase_fim)
 
     # 4) Mostrar na tela o que foi desenhado
     pygame.display.update()
