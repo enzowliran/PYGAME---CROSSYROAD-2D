@@ -4,6 +4,11 @@
 
 import pygame
 import random
+import os
+
+# Faz o jogo procurar imagens e sons na pasta onde está o jogo.py,
+# mesmo que ele seja aberto de outra pasta
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Liga o pygame (sempre a primeira coisa)
 pygame.init()
