@@ -41,6 +41,13 @@ IMAGENS = {
     "batida": [carregar_imagem("jogador_batida1.png"), carregar_imagem("jogador_batida2.png")],
     "alunos": [carregar_imagem("aluno1.png"), carregar_imagem("aluno2.png"), carregar_imagem("aluno3.png")],
     "carrinho": carregar_imagem("carrinho.png"),
+    "professora": carregar_imagem("professora.png"),
+    "diretor": carregar_imagem("diretor.png"),
+    "skate": carregar_imagem("skate.png"),
+    "merendeira": carregar_imagem("merendeira.png"),
+    "bicicleta": carregar_imagem("bicicleta.png"),
+    "titulo": carregar_imagem("titulo.png"),
+    "game_over": carregar_imagem("game_over.png"),
 }
 
 # Quantos quadros dura cada animação (60 quadros = 1 segundo)
@@ -315,25 +322,32 @@ def escrever_no_meio(tela, texto, fonte, y):
     tela.blit(imagem, (x, y))
 
 
+def desenhar_imagem_no_meio(tela, imagem, y):
+    """Desenha uma imagem centralizada na horizontal, na altura y."""
+    x = (LARGURA - imagem.get_width()) // 2
+    tela.blit(imagem, (x, y))
+
+
 def desenhar_tela_inicio(tela):
-    """Mostra o fundo escurecido, o nome do jogo, o personagem grande e como começar."""
+    """Mostra o fundo escurecido, o título em pixel art, o personagem grande e como começar."""
     tela.blit(FUNDOS[0], (0, 0))
     desenhar_sombra(tela, 0, ALTURA, 160)
-    escrever_no_meio(tela, "Segura Aí!", fonte_grande, 100)
+    desenhar_imagem_no_meio(tela, IMAGENS["titulo"], 90)
     personagem_grande = pygame.transform.scale(IMAGENS["parado"], (150, 150))
-    tela.blit(personagem_grande, (225, 190))
-    escrever_no_meio(tela, "Atravesse o corredor sem trombar em ninguém.", fonte_pequena, 380)
+    desenhar_imagem_no_meio(tela, personagem_grande, 190)
+    escrever_no_meio(tela, "Atravesse a escola sem trombar em ninguém.", fonte_pequena, 380)
     escrever_no_meio(tela, "Cada faixa nova esvazia a barra de aperto!", fonte_pequena, 410)
     escrever_no_meio(tela, "Aperte ESPAÇO para começar", fonte, 480)
 
 
 def desenhar_tela_fim(tela, placar, frase):
-    """Escurece o jogo parado e mostra a frase, os pulos, o recorde e como jogar de novo."""
+    """Escurece o jogo parado e mostra GAME OVER, a frase, os pulos, o recorde e como jogar de novo."""
     desenhar_sombra(tela, 0, ALTURA, 170)
-    escrever_no_meio(tela, frase, fonte, 190)
-    escrever_no_meio(tela, "Pulos: " + str(placar["pontos"]), fonte_grande, 250)
-    escrever_no_meio(tela, "Recorde: " + str(placar["recorde"]), fonte, 330)
-    escrever_no_meio(tela, "Aperte ESPAÇO para jogar de novo", fonte_pequena, 420)
+    desenhar_imagem_no_meio(tela, IMAGENS["game_over"], 100)
+    escrever_no_meio(tela, frase, fonte, 225)
+    escrever_no_meio(tela, "Pulos: " + str(placar["pontos"]), fonte_grande, 275)
+    escrever_no_meio(tela, "Recorde: " + str(placar["recorde"]), fonte, 345)
+    escrever_no_meio(tela, "Aperte ESPAÇO para jogar de novo", fonte_pequena, 430)
 
 
 # ============================================
@@ -352,45 +366,70 @@ som_batida = pygame.mixer.Sound("batida.wav")
 # BLOCO 11 - Mapa infinito
 # ============================================
 
-# Os dois fundos que ficam se repetindo: corredor das salas e cantina
-FUNDOS = [carregar_imagem("fundo1.png"), carregar_imagem("fundo2.png")]
+# Os três mapas que ficam se repetindo, nesta ordem: corredor das salas, cantina e parquinho
+FUNDOS = [carregar_imagem("fundo1.png"), carregar_imagem("fundo2.png"), carregar_imagem("fundo3.png")]
 
 # Cada fundo tem 12 faixas (600 / 50)
 FAIXAS_POR_FUNDO = 12
 
 # Tipo de cada faixa de cada fundo, de cima para baixo: "livre" (seguro) ou "corredor" (tem obstáculos)
 FAIXAS_FUNDO = [
-    ["livre", "corredor", "corredor", "corredor", "livre", "corredor",
-     "corredor", "livre", "corredor", "corredor", "livre", "livre"],
+    # corredor das salas: granilite (livre) e corredor de madeira
     ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
-     "corredor", "livre", "livre", "corredor", "corredor", "livre"],
+     "corredor", "livre", "corredor", "corredor", "livre", "livre"],
+    # cantina: piso xadrez (livre) e passagem de lajota
+    ["livre", "corredor", "corredor", "livre", "corredor", "corredor",
+     "livre", "corredor", "corredor", "corredor", "livre", "livre"],
+    # parquinho: grama (livre) e trilha de terra
+    ["livre", "corredor", "livre", "corredor", "corredor", "corredor",
+     "livre", "corredor", "corredor", "livre", "corredor", "livre"],
+]
+
+# Cada tipo de obstáculo: imagens possíveis, largura, velocidades possíveis e quantos vão por faixa
+TIPOS_OBSTACULO = {
+    "aluno":      {"imagens": IMAGENS["alunos"],         "largura": CASA,     "velocidades": [1, 2, 3], "quantos": 2},
+    "professora": {"imagens": [IMAGENS["professora"]],   "largura": CASA,     "velocidades": [1, 2],    "quantos": 2},
+    "diretor":    {"imagens": [IMAGENS["diretor"]],      "largura": CASA,     "velocidades": [1],       "quantos": 2},
+    "skate":      {"imagens": [IMAGENS["skate"]],        "largura": CASA,     "velocidades": [4, 5],    "quantos": 2},
+    "zelador":    {"imagens": [IMAGENS["carrinho"]],     "largura": 2 * CASA, "velocidades": [3, 4, 5], "quantos": 1},
+    "merendeira": {"imagens": [IMAGENS["merendeira"]],   "largura": 2 * CASA, "velocidades": [2, 3],    "quantos": 1},
+    "bicicleta":  {"imagens": [IMAGENS["bicicleta"]],    "largura": 2 * CASA, "velocidades": [5, 6],    "quantos": 1},
+}
+
+# Quem pode aparecer em cada mapa ("aluno" repetido = aparece mais vezes no sorteio)
+OBSTACULOS_DO_MAPA = [
+    ["aluno", "aluno", "professora", "diretor", "zelador"],   # corredor das salas
+    ["aluno", "aluno", "merendeira", "zelador"],              # cantina
+    ["aluno", "aluno", "skate", "bicicleta"],                 # parquinho
 ]
 
 # O mundo guarda quantas faixas já desceram desde a largada
 mundo = {"linhas_roladas": 0}
 
 
+def qual_fundo(numero):
+    """Diz qual dos fundos (0, 1 ou 2) a faixa de número 'numero' do mapa usa."""
+    return (numero // FAIXAS_POR_FUNDO) % len(FUNDOS)  # 0, 1, 2, 0, 1, 2...
+
+
 def tipo_da_faixa(numero):
     """Diz se a faixa de número 'numero' do mapa (0 = largada) é "livre" ou "corredor"."""
-    fundo = (numero // FAIXAS_POR_FUNDO) % 2                    # 0, 1, 0, 1...: fundo 1 e 2 alternando
-    linha = FAIXAS_POR_FUNDO - 1 - numero % FAIXAS_POR_FUNDO    # a lista é de cima para baixo
-    return FAIXAS_FUNDO[fundo][linha]
+    linha = FAIXAS_POR_FUNDO - 1 - numero % FAIXAS_POR_FUNDO  # a lista é de cima para baixo
+    return FAIXAS_FUNDO[qual_fundo(numero)][linha]
 
 
 def criar_obstaculos_da_faixa(obstaculos, y, numero):
-    """Se a faixa é corredor, sorteia 2 alunos lentos ou 1 carrinho rápido, e o sentido."""
+    """Se a faixa é corredor, sorteia um tipo de obstáculo do mapa, a velocidade e o sentido."""
     if tipo_da_faixa(numero) == "livre":
         return
+    nome = random.choice(OBSTACULOS_DO_MAPA[qual_fundo(numero)])
+    tipo = TIPOS_OBSTACULO[nome]
     direcao = random.choice([1, -1])  # 1 = para a direita, -1 = para a esquerda
-    if random.choice(["alunos", "carrinho"]) == "alunos":
-        velocidade = random.choice([1, 2, 3]) * direcao
-        x = random.randint(0, 250)
-        obstaculos.append(criar_obstaculo(x, y, velocidade, CASA, random.choice(IMAGENS["alunos"])))
-        obstaculos.append(criar_obstaculo(x + 300, y, velocidade, CASA, random.choice(IMAGENS["alunos"])))
-    else:
-        velocidade = random.choice([4, 5, 6]) * direcao
-        x = random.randint(0, 500)
-        obstaculos.append(criar_obstaculo(x, y, velocidade, 2 * CASA, IMAGENS["carrinho"]))
+    velocidade = random.choice(tipo["velocidades"]) * direcao
+    x = random.randint(0, 250)
+    for i in range(tipo["quantos"]):  # se forem 2, o segundo vai 300 pixels depois
+        imagem = random.choice(tipo["imagens"])
+        obstaculos.append(criar_obstaculo(x + i * 300, y, velocidade, tipo["largura"], imagem))
 
 
 def montar_mapa_inicial(obstaculos, mundo):
@@ -419,7 +458,7 @@ def desenhar_fundo(tela, mundo):
     primeiro = mundo["linhas_roladas"] // FAIXAS_POR_FUNDO
     for numero in [primeiro, primeiro + 1]:
         y = mundo["linhas_roladas"] * CASA - numero * ALTURA
-        tela.blit(FUNDOS[numero % 2], (0, y))
+        tela.blit(FUNDOS[numero % len(FUNDOS)], (0, y))
 
 
 # ============================================
