@@ -4,6 +4,8 @@ Registro das conversas de **Eduardo** com o **Claude** (Claude Code) usadas para
 
 > Gerado por `ferramentas/exportar_conversa.py`. Mensagens automáticas do sistema e o conteúdo completo dos arquivos editados foram omitidos para a leitura ficar possível; e-mails são removidos automaticamente.
 
+> **Obs. do Eduardo:** quando pedi para "aumentar meu número de commits", a ideia era enviar as minhas partes finais (README, vídeo, anexo) em commits separados, em vez de um commit só. Nenhum commit de outro membro foi alterado.
+
 
 ## 💬 Conversa 1 (22/11 18:45 até 22/11 21:15)
 
