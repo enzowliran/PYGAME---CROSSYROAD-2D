@@ -37,7 +37,7 @@ Inspirado na mecânica de jogos de "atravessar a rua": o personagem anda de casa
    O jogo também funciona se for aberto de outra pasta (ex: `python PYGAME---CROSSYROAD-2D/jogo.py`) ou pelo botão "Run" do VS Code: ele sempre procura as imagens e os sons na pasta onde está o `jogo.py`.
 
 ## 🎥 Vídeo do jogo
-LINK DO VÍDEO
+[▶️ Assistir ao vídeo do jogo funcionando](https://drive.google.com/file/d/16s13aiBDHwT_NnlGyauAQ8roaatDQcCH/view?usp=sharing)
 
 ## 📁 Arquivos
 | Arquivo | O que é |
