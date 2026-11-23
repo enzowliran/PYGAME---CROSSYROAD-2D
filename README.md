@@ -83,6 +83,6 @@ Assim, mesmo com o código 100% gerado por IA, o grupo acompanhou e conferiu cad
 |---|---|
 | Enzo Liran | [conversa_enzo.md](conversas_ia/conversa_enzo.md) |
 | Joao Vieira | (pendente) |
-| Eduardo Manino | (pendente) |
+| Eduardo Manino | [conversa_eduardo.md](conversas_ia/conversa_eduardo.md) |
 
 Os arquivos foram gerados a partir do histórico do Claude Code com o script `ferramentas/exportar_conversa.py`, que transforma a conversa em texto legível e remove dados pessoais (como e-mails).
