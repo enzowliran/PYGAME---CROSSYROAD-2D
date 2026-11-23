@@ -23,6 +23,7 @@ Inspirado na mecânica de jogos de "atravessar a rua": o personagem anda de casa
 |---|---|
 | ↑ ↓ ← → | Andar uma casa |
 | ESPAÇO | Começar / jogar de novo |
+| ESC | Sair do jogo (o jogo abre em tela cheia) |
 
 ## ⚙️ Como instalar e rodar
 1. Tenha o **Python 3** instalado.

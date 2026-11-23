@@ -20,8 +20,9 @@ ALTURA = 600
 # Tamanho de cada "casa" do chão: tudo anda de casa em casa (a tela tem 12 x 12 casas)
 CASA = 50
 
-# Cria a janela e coloca um título nela
-tela = pygame.display.set_mode((LARGURA, ALTURA))
+# Cria a tela em tela cheia e coloca um título nela.
+# SCALED amplia os 600 x 600 para caber no monitor, então o resto do código não muda.
+tela = pygame.display.set_mode((LARGURA, ALTURA), pygame.FULLSCREEN | pygame.SCALED)
 pygame.display.set_caption("Segura Aí!")
 
 # Relógio que controla a velocidade do jogo
@@ -466,6 +467,9 @@ while rodando:
     # 1) Ler o que o jogador fez
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
+            rodando = False
+        # Em tela cheia não aparece o X: o ESC fecha o jogo
+        if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
             rodando = False
         if evento.type == pygame.KEYDOWN:
             if estado == "jogo":
